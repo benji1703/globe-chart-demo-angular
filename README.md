@@ -1,59 +1,70 @@
-# GlobeChartDemoAngular
+# globe-chart · Angular Demo
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
+> **ITDR / ISPM — AI Anomaly Detection Engine** · A minimal Angular 19 integration of the [`globe-chart`](https://github.com/benji1703/globe-chart) web component, styled as a 2026-era AI frontier cybersecurity dashboard.
 
-## Development server
+**[Live demo →](https://benji1703.github.io/globe-chart-demo-angular/)**
 
-To start a local development server, run:
+---
 
-```bash
-ng serve
+## What this shows
+
+An **AI Identity Anomaly Map** showing ML-detected anomaly scores per country — the density of unusual identity events (impossible travel, credential stuffing, privilege escalation) flagged by the AI engine. High-anomaly regions glow green. Built with `globe-chart` — a framework-agnostic web component that works in any JS environment.
+
+**The entire globe-chart integration is 3 lines:**
+
+```ts
+import 'globe-chart'           // 1. register the custom element
+
+// In template:
+<globe-chart #globeEl legend theme="dark"></globe-chart>
+
+// In component:
+ngAfterViewInit() {
+  const el = this.globeRef.nativeElement
+  el.data = data               // 2. set data
+  el.config = { ... }         // 3. configure
+}
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The only Angular-specific requirement is `CUSTOM_ELEMENTS_SCHEMA` in the component decorator — one line.
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Run locally
 
 ```bash
-ng generate --help
+npm install
+npm run start    # → http://localhost:4200
+npm run build    # production build
 ```
 
-## Building
+## Angular custom element setup
 
-To build the project run:
+Add `CUSTOM_ELEMENTS_SCHEMA` to the standalone component's `schemas` array:
 
-```bash
-ng build
+```ts
+@Component({
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],  // ← only change needed
+  ...
+})
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The `ne_110m_admin_0_countries.json` asset is served via `angular.json` assets config:
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```json
+{
+  "glob": "ne_110m_admin_0_countries.json",
+  "input": "node_modules/globe-chart/dist",
+  "output": "/"
+}
 ```
 
-## Running end-to-end tests
+## Data
 
-For end-to-end (e2e) testing, run:
+AI anomaly detection scores (0–100) per country — normalized count of ML-flagged identity anomalies per 1,000 events. Based on synthetic threat telemetry representative of real-world ITDR deployments, 2024.
 
-```bash
-ng e2e
-```
+## Tech
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Angular** 19 · **TypeScript** · esbuild
+- **globe-chart** `^0.2.7` — [npm](https://www.npmjs.com/package/globe-chart) · [GitHub](https://github.com/benji1703/globe-chart)
