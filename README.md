@@ -10,23 +10,41 @@
 
 An **AI Identity Anomaly Map** showing ML-detected anomaly scores per country — the density of unusual identity events (impossible travel, credential stuffing, privilege escalation) flagged by the AI engine. High-anomaly regions glow green. Built with `globe-chart` — a framework-agnostic web component that works in any JS environment.
 
-**The entire globe-chart integration is 3 lines:**
+**The entire integration is plain template bindings — no `ViewChild`, no lifecycle hooks:**
 
 ```ts
-import 'globe-chart'           // 1. register the custom element
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core'
+import type { CountryEventDetail, GlobeChartConfigInput } from 'globe-chart'
+import 'globe-chart' // register the custom element
 
-// In template:
-<globe-chart #globeEl legend theme="dark"></globe-chart>
+@Component({
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA], // ← only Angular-specific line
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <globe-chart
+      [data]="rows"
+      [config]="config"
+      legend
+      theme="dark"
+      (country-select)="onCountrySelect($event)"
+    ></globe-chart>
+  `,
+})
+export class AppComponent {
+  readonly rows = DATA
+  readonly config: GlobeChartConfigInput = { legend: { title: 'AI Anomaly Detection Score' } }
+  readonly selected = signal<CountryEventDetail | null>(null)
 
-// In component:
-ngAfterViewInit() {
-  const el = this.globeRef.nativeElement
-  el.data = data               // 2. set data
-  el.config = { ... }         // 3. configure
+  onCountrySelect(event: Event) {
+    this.selected.set((event as CustomEvent<CountryEventDetail>).detail)
+  }
 }
 ```
 
-The only Angular-specific requirement is `CUSTOM_ELEMENTS_SCHEMA` in the component decorator — one line.
+Angular's `[prop]` syntax binds element **properties**, which is exactly what
+`globe-chart` expects — data flows in via bindings, selections flow out via the
+typed `country-select` CustomEvent.
 
 ---
 
@@ -59,6 +77,10 @@ The `ne_110m_admin_0_countries.json` asset is served via `angular.json` assets c
   "output": "/"
 }
 ```
+
+(From globe-chart ≥0.3 you can skip the assets config and set
+`config.globe.topologyUrl` or pass polygons via the `countries` property
+instead — see the [package README](https://github.com/benji1703/globe-chart#countries-map-asset).)
 
 ## Data
 

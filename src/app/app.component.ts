@@ -1,5 +1,5 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, AfterViewInit, ViewChild, ElementRef } from '@angular/core'
-import { NgFor } from '@angular/common'
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core'
+import type { CountryEventDetail, GlobeChartConfigInput } from 'globe-chart'
 import 'globe-chart'
 
 const DATA = [
@@ -69,8 +69,8 @@ const STATS = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [NgFor],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="app">
       <header class="header">
@@ -90,20 +90,27 @@ const STATS = [
           <p class="desc">
             ML-detected identity anomaly scores by nation ·
             <code>globe-chart</code> web component · Angular
+            @if (selected(); as s) {
+              <span class="selected">· {{ s.name }} — score {{ s.value }}</span>
+            }
           </p>
         </div>
       </header>
       <div class="stats-bar">
-        <div *ngFor="let s of stats" class="stat-card" [style.borderLeftColor]="s.c">
-          <div class="stat-value" [style.color]="s.c">{{ s.value }}</div>
-          <div class="stat-label">{{ s.label }}</div>
-        </div>
+        @for (s of stats; track s.label) {
+          <div class="stat-card" [style.borderLeftColor]="s.c">
+            <div class="stat-value" [style.color]="s.c">{{ s.value }}</div>
+            <div class="stat-label">{{ s.label }}</div>
+          </div>
+        }
       </div>
       <main class="main">
         <globe-chart
-          #globeEl
+          [data]="rows"
+          [config]="config"
           legend
           theme="dark"
+          (country-select)="onCountrySelect($event)"
           style="width: 100%; height: 100%; display: block"
         ></globe-chart>
       </main>
@@ -125,6 +132,7 @@ const STATS = [
     .title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #f1f5f9; letter-spacing: -0.01em; }
     .desc { margin: 0.1rem 0 0; font-size: 0.7rem; color: #475569; }
     .desc code { color: #00f088; background: rgba(0,240,136,0.08); padding: 0 0.3em; border-radius: 3px; }
+    .selected { color: #00f088; font-weight: 600; }
     .stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; padding: 6px 10px; background: #030712; border-bottom: 1px solid rgba(0,240,136,0.08); }
     .stat-card { background: #060d1a; border: 1px solid #1e293b; border-left-width: 3px; padding: 0.45rem 0.65rem; border-radius: 3px; }
     .stat-value { font-size: 1.2rem; font-weight: 700; font-family: monospace; line-height: 1; }
@@ -132,16 +140,16 @@ const STATS = [
     .main { flex: 1; }
   `],
 })
-export class AppComponent implements AfterViewInit {
-  @ViewChild('globeEl') globeRef!: ElementRef
-  stats = STATS
+export class AppComponent {
+  readonly stats = STATS
+  readonly rows = DATA
+  readonly config: GlobeChartConfigInput = {
+    legend: { title: 'AI Anomaly Detection Score' },
+    colors: { low: '#0f172a', high: '#00f088' },
+  }
+  readonly selected = signal<CountryEventDetail | null>(null)
 
-  ngAfterViewInit() {
-    const el = this.globeRef.nativeElement as any
-    el.data = DATA
-    el.config = {
-      legend: { title: 'AI Anomaly Detection Score' },
-      colors: { low: '#0f172a', high: '#00f088' },
-    }
+  onCountrySelect(event: Event) {
+    this.selected.set((event as CustomEvent<CountryEventDetail>).detail)
   }
 }
