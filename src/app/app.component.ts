@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core'
 import type { CountryEventDetail, GlobeChartConfigInput } from 'globe-chart'
-import 'globe-chart'
+
+// Register <globe-chart> lazily: keeps three.js/globe.gl out of the initial
+// bundle. Angular [prop] bindings set DOM properties, which Lit replays on
+// upgrade, so binding before the element is defined is safe.
+void import('globe-chart')
 
 const DATA = [
   { iso: 'RU', value: 94, name: 'Russia' },
